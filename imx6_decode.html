@@ -1,0 +1,127 @@
+<html>
+<head>
+  <title>NXP IMX6 PAD CTL decode</title>
+  <script>
+  
+  document.addEventListener('DOMContentLoaded', function () {
+ 
+    document.querySelector('#value').addEventListener('input', updatePage);
+    document.querySelectorAll('input[name=resistor]').forEach((elem) => {
+      elem.addEventListener("change", updatePage);
+    });
+ 
+    function updatePage () {
+      if (document.querySelector('#value').value.length == 0) {
+        document.querySelector('#hys').innerText = '';
+        document.querySelector('#pull').innerText = '';
+        document.querySelector('#keeper').innerText = '';
+        document.querySelector('#ode').innerText = '';
+        document.querySelector('#speed').innerText = '';
+        document.querySelector('#dse').innerText = '';
+        document.querySelector('#sre').innerText = '';
+        return;
+      }
+    
+      const val = parseInt(document.querySelector('#value').value, 16);
+      const resistor = document.querySelector('input[name=resistor]:checked')?.value;
+
+      const hys = 1 << 16;
+      const pull_config_mask = 3 << 14;
+      const pull_select = 1 << 13;
+      const pull_keeper_enable = 1 << 12;
+      const open_drain = 1 << 11;
+      const speed_mask = 3 << 6;
+      const dse_mask = 7 << 3;
+      const fast_slew = 1 << 0;
+      
+      const div = (val & dse_mask >> 3);
+    
+      document.querySelector('#hys').innerText = (val & hys ? 'Enabled' : 'Disabled') + '\n';
+      
+      if (val & pull_keeper_enable) {
+        if (val & pull_select) {
+          switch (val & pull_config_mask >> 14) {
+            case 0:
+              document.querySelector('#pull').innerText = '100K Ohm down\n';
+              break;
+            case 1:
+              document.querySelector('#pull').innerText = '47K Ohm up\n';
+              break;
+            case 2:
+              document.querySelector('#pull').innerText = '100K Ohm up\n';
+              break;
+            case 3:
+              document.querySelector('#pull').innerText = '22K Ohm up\n';
+              break;
+          }
+          document.querySelector('#keeper').innerText = 'Disabled\n';
+        } else {
+          document.querySelector('#pull').innerText = 'Disabled\n';
+          document.querySelector('#keeper').innerText = 'Enabled\n';
+        }
+      } else {
+        document.querySelector('#pull').innerText = 'Disabled\n';
+        document.querySelector('#keeper').innerText = 'Disabled\n';
+      }
+      
+      if (val & open_drain) {
+        document.querySelector('#ode').innerText = 'Enabled\n';
+      } else {
+        document.querySelector('#ode').innerText = 'Disabled\n';
+      }
+      
+      switch (val & speed_mask >> 6) {
+        case 0:
+          document.querySelector('#speed').innerText = 'low (50 MHz)\n';
+          break;
+        case 1:
+          document.querySelector('#speed').innerText = 'medium (100 MHz)\n';
+          break;
+        case 2:
+          document.querySelector('#speed').innerText = 'medium (100 MHz)\n';
+          break;
+        case 3:
+          document.querySelector('#speed').innerText = 'max (200 MHz)\n';
+          break;
+      }
+      
+      if (resistor && (div > 0)) {
+        document.querySelector('#dse').innerText = '(R0 / ' + div + ') = ' + (parseInt(resistor) / div).toFixed(2) + ' Ohm\n';
+      } else if (div > 0) {
+        document.querySelector('#dse').innerText = '(R0 / ' + div + ')\n';
+      } else {
+        document.querySelector('#dse').innerText = 'output disabled\n';
+      }
+      
+      if (val & fast_slew) {
+        document.querySelector('#sre').innerText = 'fast\n';
+      } else {
+        document.querySelector('#sre').innerText = 'slow\n';
+      }
+    }
+  
+  });
+  </script>
+</head>
+<body>
+  <form>
+  <input type="text" id="value" />
+
+  <p>Hysteresis: <span id="hys"></span></p>
+
+  <p>Pull: <span id="pull"></span></p>
+
+  <p>Keeper: <span id="keeper"></span></p>
+
+  <p>Open Drain: <span id="ode"></span></p>
+
+  <p>Speed: <span id="speed"></span></p>
+  
+  <p>Voltage: <input type="radio" name="resistor" value="150"/> 1.8 V <input type="radio" name="resistor" value="260"/> 3.3 V <input type="radio" name="resistor" value="240"/> DDR</p>
+
+  <p>Drive strength: <span id="dse"></span></p>
+
+  <p>Slew rate: <span id="sre"></span></p>
+</form>
+</body>
+</html>
